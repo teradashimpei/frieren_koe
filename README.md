@@ -1,5 +1,55 @@
 # frieren_koe
 
+# koe
+STEP2課題アプリ
+
+## 開発環境
+- Python 3.11
+- streamlit
+- Supabase
+
+## 初期セットアップ
+
+### 1. リポジトリを取得
+source treeでこのリポジトリをclone
+
+### 2. 仮想環境の作成
+
+ここからターミナル（コマンドプロンプト）で実行
+
+- cloneしたフォルダへ移動
+cd koe
+
+- 仮想環境の作成
+Mac: python3 -m venv venv
+Windows: python -m venv venv
+
+- 仮想環境を有効化
+Mac: source venv/bin/activate
+Windows: venv\Scripts\activate
+
+- Streamlit アプリを起動する
+streamlit run app.py
+
+- ライブラリのインストール
+pip install -r requirements.txt
+
+- 仮想環境の終了
+deactivate
+
+## ライブラリを途中で追加する場合
+
+仮想環境にいることを確認し、ターミナルで実行
+pip install ライブラリ名
+
+requirements.txtに追加したライブラリ名を追記してpush
+注意：バージョン情報は不要
+- requests
+
+他のメンバーは追加されているライブラリをローカル上でインストール
+pip install ライブラリ名
+
+
 # 🎯 プロジェクトの本質的な問い
 
 > 「探しても見つからないのは検索エンジンの問題ではなく、データが存在しないことが問題。Koeはそのデータを、AIの時代に備えて今から積み上げるインフラ。」
