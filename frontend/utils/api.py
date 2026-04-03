@@ -1,7 +1,3 @@
-import requests
-
-API_URL = "http://localhost:8000"
-
 def save_post(author_name, department, content,
               status, urgency, needs_manager, memo):
     pass
