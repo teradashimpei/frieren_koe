@@ -4,3 +4,4 @@ python-dotenv==1.2.2
 requests==2.33.1
 streamlit==1.56.0
 psycopg
+scikit-learn
