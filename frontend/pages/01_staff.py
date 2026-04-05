@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 from utils.api import save_post
+from backend.database import register_report
 
 st.markdown("<h1 style='text-align: center;'>今日もお疲れさまでした 👷</h1>", unsafe_allow_html=True)
 
@@ -15,7 +16,6 @@ with col2:
 
     # ── 入力フォーム ──
     with st.form("report_form"):
-
         # 基本情報
         st.subheader("👤 基本情報")
         department = st.text_input("部署")
@@ -25,8 +25,12 @@ with col2:
 
         # ① 作業時間
         st.subheader("⏰ 作業時間")
-        start_time = st.time_input("作業開始時間", step=datetime.timedelta(minutes=1))
-        end_time = st.time_input("作業終了時間", step=datetime.timedelta(minutes=1))        
+        start_date = st.date_input("作業開始日付")
+        start_time = st.time_input("作業開始時間", step=datetime.timedelta(minutes=15))
+        end_date = st.date_input("作業終了日付")
+        end_time = st.time_input("作業終了時間", step=datetime.timedelta(minutes=15))        
+        work_start = datetime.datetime.combine(start_date, start_time)
+        work_end = datetime.datetime.combine(end_date, end_time)
 
         st.divider()
 
@@ -62,14 +66,25 @@ with col2:
         st.markdown("### 💬 気付いたこと　<span style='color:gray; font-size:14px;'>※任意</span>", unsafe_allow_html=True)
         notice = st.text_area("業務以外のことでも、気になったことをお話しください",
                       placeholder="例：今日の材料がいつもより硬い気がする／ベテランの〇〇さんのやり方が参考になった／人手が足りなくて焦った／更衣室の鍵が壊れかけている")
+        data = {
+            "author_name": author_name,
+            "department": department,
+            "content": content,
+            "work_start": work_start,
+            "work_end": work_end,
+            "is_smooth": status,
+            "improvement": memo,
+            "urgency": urgency,
+            "notes": notice,
+        }
+
 
         submitted = st.form_submit_button("送信する")
 
     # ── 送信処理 ──
     if submitted:
-        if not author_name or not content or not status:
-            st.error("名前・業務内容・順調ですか？は必須です")
+        result = register_report(data)
+        if result["status"] == "success":
+            st.success(result["message"])
         else:
-            save_post(author_name, department, content,
-                      status, urgency, False, memo,notice)
-            st.success("送信完了しました！お疲れさまでした🍺")
+            st.error(result["message"])
