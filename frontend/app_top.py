@@ -10,4 +10,5 @@ if st.button("管理者としてログイン"):
     st.switch_page("pages/02_manager.py")
 
 # オレンジのボタン（遷移先は後で修正）
-st.button("気づきを見る", type="primary")
+if st.button("気づきを見る", type="primary"):
+    st.switch_page("pages/03_search.py")
