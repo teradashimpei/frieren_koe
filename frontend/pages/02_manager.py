@@ -1,86 +1,201 @@
 import streamlit as st
 from utils.api import get_summary, get_posts
-from utils.ranking import SearchEngine
 
 st.title("今日の現場レポート")
 
 # ── session_stateの初期化 ──
 if "selected_post" not in st.session_state:
     st.session_state.selected_post = None
-if "show_ranking" not in st.session_state:
-    st.session_state.show_ranking = False
 
 # ── タブ ──
-tab1, tab2 = st.tabs(["📋 案件一覧", "🔍 詳細"])
+tab1, tab2 = st.tabs(["🗂 案件一覧", "🔍 詳細"])
+
+# ── ダミーデータ ──
+all_posts = [
+    {
+        "id": 1,
+        "author_name": "山田太郎",
+        "department": "製造部",
+        "content": "ラインCで異音が発生しました。原因は不明です。",
+        "is_smooth": 1,
+        "improvement": "設備点検が必要だと思います。",
+        "urgency": "高",
+        "notes": "早急に対応が必要だと感じました。",
+        "work_start": "08:00",
+        "work_end": "21:00",
+    },
+    {
+        "id": 2,
+        "author_name": "田中花子",
+        "department": "営業部",
+        "content": "クレーム対応に時間がかかりました。",
+        "is_smooth": 2,
+        "improvement": "対応マニュアルの見直しが必要です。",
+        "urgency": "中",
+        "notes": "",
+        "work_start": "08:00",
+        "work_end": "20:00",
+    },
+    {
+        "id": 3,
+        "author_name": "佐藤次郎",
+        "department": "総務部",
+        "content": "通常業務をこなしました。特に問題はありません。",
+        "is_smooth": 4,
+        "improvement": "",
+        "urgency": "低",
+        "notes": "",
+        "work_start": "09:00",
+        "work_end": "18:00",
+    },
+    {
+        "id": 4,
+        "author_name": "鈴木美咲",
+        "department": "人事部",
+        "content": "採用面接を3件実施しました。順調に進んでいます。",
+        "is_smooth": 5,
+        "improvement": "",
+        "urgency": "低",
+        "notes": "面接の雰囲気が良かったです。",
+        "work_start": "09:00",
+        "work_end": "17:30",
+    },
+    {
+        "id": 5,
+        "author_name": "伊藤健太",
+        "department": "経理部",
+        "content": "月次決算の資料作成を行いました。",
+        "is_smooth": 3,
+        "improvement": "",
+        "urgency": "低",
+        "notes": "",
+        "work_start": "09:00",
+        "work_end": "18:30",
+    },
+]
+
+# ── 必読案件の判定 ──
+def is_priority(post):
+    try:
+        start = int(post["work_start"].split(":")[0])
+        end   = int(post["work_end"].split(":")[0])
+        hours = end - start
+    except:
+        hours = 0
+    return (
+        post["is_smooth"] <= 2 or
+        post["improvement"] != "" or
+        post["urgency"] == "高" or
+        hours >= 11
+    )
+
+priority_posts = [p for p in all_posts if is_priority(p)]
+other_posts    = [p for p in all_posts if not is_priority(p)]
+
+# ── 案件カード表示関数 ──
+def show_card(post, color):
+    border_color = "#E24B4A" if color == "red" else "#B4B2A9"
+
+    content_text     = f"順調度：{post['is_smooth']}　作業内容：{post['content'][:50]}"
+    improvement_text = f"改善点：{post['improvement']}" if post['improvement'] else ""
+    notes_text       = f"今日の気づき：{post['notes'][:50]}" if post['notes'] else ""
+
+    extra = ""
+    if improvement_text:
+        extra += f"<br>{improvement_text}"
+    if notes_text:
+        extra += f"<br>{notes_text}"
+
+    st.markdown(
+        f"""<div style="
+            border-left: 4px solid {border_color};
+            border-top: 0.5px solid #ddd;
+            border-right: 0.5px solid #ddd;
+            border-bottom: 0.5px solid #ddd;
+            border-radius: 0 12px 12px 0;
+            padding: 14px 16px;
+            margin-bottom: 4px;
+            background: white;">
+            <div style="font-size:14px;font-weight:500;
+                        margin-bottom:8px;">
+                {post['author_name']}
+            </div>
+            <div style="font-size:13px;color:#666;
+                        line-height:1.6;">
+                {content_text}{extra}
+            </div>
+        </div>""",
+        unsafe_allow_html=True
+    )
+    if st.button("詳細を見る", key=f"btn_{post['id']}"):
+        st.session_state.selected_post = post
 
 # ── タブ1：案件一覧 ──
 with tab1:
-
     st.subheader("🚨 必読案件")
-    st.caption("緊急度：高　または　上司判断あり")
+    st.caption("順調度：2以下 / 改善点あり / 改善点緊急度：高 / 勤務時間11時間以上")
 
-    # ダミーデータ（バックエンドができたら差し替える）
-    posts = [
-        {"id": 1, "author_name": "田中太郎", "department": "製造部",
-         "urgency": "高", "needs_manager": True,
-         "content": "服が壊れたので買い替えが必要。",
-         "status": "停滞", "memo": "早急に対応が必要です"},
-        {"id": 2, "author_name": "佐藤花子", "department": "営業部",
-         "urgency": "高", "needs_manager": False,
-         "content": "ラインCで異音がした。",
-         "status": "困っている", "memo": ""},
-    ]
+    if priority_posts:
+        for post in priority_posts:
+            show_card(post, "red")
+    else:
+        st.info("必読案件はありません")
 
-    for post in posts:
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write(f"部署：{post['department']}　名前：{post['author_name']}")
-            st.write(f"緊急度：{post['urgency']}　上司判断：{'あり' if post['needs_manager'] else 'なし'}")
-        with col2:
-            if st.button("詳細を見る", key=f"btn_{post['id']}"):
-                st.session_state.selected_post = post
-                st.session_state.show_ranking = False
-        st.divider()
+    st.subheader("📋 その他のレポート")
 
-    st.subheader("📋 その他報告")
-    st.info("バックエンド接続後に表示されます")
+    if other_posts:
+        for post in other_posts:
+            show_card(post, "gray")
+    else:
+        st.info("その他のレポートはありません")
 
 # ── タブ2：詳細 ──
 with tab2:
-
     if st.session_state.selected_post is None:
         st.info("案件一覧から「詳細を見る」を押してください")
 
     else:
         post = st.session_state.selected_post
 
-        st.subheader("必読案件の詳細")
+        st.subheader("報告書の詳細")
+
+        # 部署・名前・勤務時間
         st.write(f"部署名：{post['department']}")
         st.write(f"名前：{post['author_name']}")
+        st.write(f"勤務時間：{post['work_start']} 〜 {post['work_end']}")
         st.divider()
 
+        # 作業内容
+        st.markdown("**作業内容**")
         st.text_area(
-            "報告書詳細",
-            post["content"],
-            disabled=True
+            label="作業内容",
+            value=post["content"],
+            disabled=True,
+            label_visibility="collapsed"
         )
 
-        col1, col2 = st.columns(2)
-        col1.metric("緊急度", post["urgency"])
-        col2.metric("進捗度", post["status"])
-
-        if post["memo"]:
-            st.caption(f"その他：{post['memo']}")
-
+        # 順調度
+        st.metric("順調度", post["is_smooth"])
         st.divider()
 
-        # 過去事例ボタン
-        if st.button("過去事例を参照する"):
-            st.session_state.show_ranking = True
+        # 改善点
+        st.markdown("**改善点**")
+        st.text_area(
+            label="改善点",
+            value=post["improvement"] if post["improvement"] else "記載なし",
+            disabled=True,
+            label_visibility="collapsed"
+        )
 
-        # 過去事例を表示
-        if st.session_state.show_ranking:
-            st.subheader("類似事例")
-            keyword = st.text_input("キーワードを入力してください")
-            if st.button("検索する"):
-                st.info("バックエンド接続後に検索できます")
+        # 緊急度
+        st.metric("緊急度", post["urgency"])
+        st.divider()
+
+        # 今日の気づき
+        st.markdown("**今日の気づき**")
+        st.text_area(
+            label="今日の気づき",
+            value=post["notes"] if post["notes"] else "記載なし",
+            disabled=True,
+            label_visibility="collapsed"
+        )
