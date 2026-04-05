@@ -28,6 +28,18 @@ OPTIONAL_TEXT_KEYS = [
 
 ALL_KEYS = REQUIRED_TEXT_KEYS + REQUIRED_VALUE_KEYS + OPTIONAL_TEXT_KEYS
 
+FIELD_LABELS = {
+    "author_name": "名前",
+    "department": "部署",
+    "content": "業務内容",
+    "is_smooth": "順調かどうか",
+    "work_start": "開始日時",
+    "work_end": "終了日時",
+    "improvement": "改善点",
+    "urgency": "緊急度",
+    "notes": "気づき",
+}
+
 # 共通のDB接続設定
 def get_connection():
     """辞書形式でデータを返す設定でDBに接続する"""
@@ -45,7 +57,7 @@ def validate_and_prepare(data: dict):
         return None, "データ形式が違います"
     missing_keys = [key for key in ALL_KEYS if not key in data]
     if missing_keys:
-        return None, f"項目が見つかりません。{', '.join(missing_keys)}"
+        return None, f"項目が見つかりません。{', '.join(FIELD_LABELS.get(key,key) for key in missing_keys)}"
     cleaned_data = {
         "author_name": normalize_text(data["author_name"]),
         "department": normalize_text(data["department"]),
@@ -67,7 +79,7 @@ def validate_and_prepare(data: dict):
             missing_required.append(key)
 
     if missing_required:
-        return None, f"必須入力です。{', '.join(missing_required)}"
+        return None, f"必須入力です。{', '.join(FIELD_LABELS.get(key, key) for key in missing_required)}"
     return cleaned_data, None
 
 
