@@ -18,7 +18,7 @@ pages = {
         st.Page("app_top.py",          title="TOP"),
         st.Page("pages/01_staff.py",   title="Staff"),
         st.Page("pages/02_manager.py", title="Manager"),
-        st.Page("pages/03_search.py", title="Search"),
+        st.Page("pages/03_search.py", title="search"),
     ]
 }
 
