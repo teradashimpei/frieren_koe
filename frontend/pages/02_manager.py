@@ -7,9 +7,6 @@ st.title("今日の現場レポート")
 if "selected_post" not in st.session_state:
     st.session_state.selected_post = None
 
-# ── タブ ──
-tab1, tab2 = st.tabs(["🗂 案件一覧", "🔍 詳細"])
-
 # ── ダミーデータ ──
 all_posts = [
     {
@@ -92,7 +89,7 @@ def is_priority(post):
 priority_posts = [p for p in all_posts if is_priority(p)]
 other_posts    = [p for p in all_posts if not is_priority(p)]
 
-# ── 案件カード表示関数 ──
+# ── 案件カード表示関数（expander版）──
 def show_card(post, color):
     border_color = "#E24B4A" if color == "red" else "#B4B2A9"
 
@@ -106,6 +103,7 @@ def show_card(post, color):
     if notes_text:
         extra += f"<br>{notes_text}"
 
+    # カードのプレビュー
     st.markdown(
         f"""<div style="
             border-left: 4px solid {border_color};
@@ -127,75 +125,61 @@ def show_card(post, color):
         </div>""",
         unsafe_allow_html=True
     )
-    if st.button("詳細を見る", key=f"btn_{post['id']}"):
-        st.session_state.selected_post = post
 
-# ── タブ1：案件一覧 ──
-with tab1:
-    st.subheader("🚨 必読案件")
-    st.caption("順調度：2以下 / 改善点あり / 改善点緊急度：高 / 勤務時間11時間以上")
-
-    if priority_posts:
-        for post in priority_posts:
-            show_card(post, "red")
-    else:
-        st.info("必読案件はありません")
-
-    st.subheader("📋 その他のレポート")
-
-    if other_posts:
-        for post in other_posts:
-            show_card(post, "gray")
-    else:
-        st.info("その他のレポートはありません")
-
-# ── タブ2：詳細 ──
-with tab2:
-    if st.session_state.selected_post is None:
-        st.info("案件一覧から「詳細を見る」を押してください")
-
-    else:
-        post = st.session_state.selected_post
-
-        st.subheader("報告書の詳細")
-
-        # 部署・名前・勤務時間
+    # expanderで詳細を表示
+    with st.expander("詳細を見る"):
         st.write(f"部署名：{post['department']}")
         st.write(f"名前：{post['author_name']}")
         st.write(f"勤務時間：{post['work_start']} 〜 {post['work_end']}")
         st.divider()
 
-        # 作業内容
         st.markdown("**作業内容**")
         st.text_area(
             label="作業内容",
             value=post["content"],
             disabled=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key=f"content_{post['id']}"
         )
 
-        # 順調度
         st.metric("順調度", post["is_smooth"])
         st.divider()
 
-        # 改善点
         st.markdown("**改善点**")
         st.text_area(
             label="改善点",
             value=post["improvement"] if post["improvement"] else "記載なし",
             disabled=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key=f"improvement_{post['id']}"
         )
 
-        # 緊急度
         st.metric("緊急度", post["urgency"])
         st.divider()
 
-        # 今日の気づき
         st.markdown("**今日の気づき**")
         st.text_area(
             label="今日の気づき",
             value=post["notes"] if post["notes"] else "記載なし",
             disabled=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key=f"notes_{post['id']}"
         )
+
+# ── 案件一覧 ──
+st.subheader("🚨 必読案件")
+st.caption("順調度：2以下 / 改善点あり / 改善点緊急度：高 / 勤務時間11時間以上")
+
+if priority_posts:
+    for post in priority_posts:
+        show_card(post, "red")
+else:
+    st.info("必読案件はありません")
+
+st.subheader("📋 その他のレポート")
+
+if other_posts:
+    for post in other_posts:
+        show_card(post, "gray")
+else:
+    st.info("その他のレポートはありません")
