@@ -1,6 +1,7 @@
 # 必要な道具を準備する
 import streamlit as st
-from utils.api import get_posts
+from backend.search import search_fulltext
+from backend.database import get_all_analysis_reports
 
 # ── タイトルを真ん中に表示する ──
 st.markdown("<h1 style='text-align: center;'>Koe&nbsp;を探す 🧐</h1>", unsafe_allow_html=True)
@@ -35,18 +36,17 @@ with col2:  # 真ん中の列の中に全部書く
 
     # 「検索する」ボタンが押されたときの処理
     if st.button("検索する", use_container_width=True):
-        
+
         # キーワードが空っぽのときはエラーを出す
         if not keyword:
             st.error("キーワードを入力してください")
-        
         else:
             # バックエンドから全件データを取得する
-            posts = get_posts()
-            
-            if posts:
+            analysis_reports = get_all_analysis_reports()
+
+            if analysis_reports:
                 # キーワードが含まれている投稿だけを絞り込む
-                results = [p for p in posts if keyword in str(p)]
+                results = search_fulltext(keyword, analysis_reports)
 
                 if results:
                     # 何件見つかったか表示する
@@ -55,13 +55,12 @@ with col2:  # 真ん中の列の中に全部書く
 
                     # 1件ずつ表示する
                     for result in results:
-                        with st.expander(f"👤 {result.get('author_name', '')}　{result.get('department', '')}"):
+                        with st.expander(f"👤 {result.get('author_name', '')}　{result.get('issue_type', '')}"):
                             st.write(result.get("content", ""))
-                            if result.get("memo"):
-                                st.caption(f"💡 改善点：{result.get('memo', '')}")
+                            if result.get("improvement"):
+                                st.caption(f"💡 改善点：{result.get('improvement', '')}")
                 else:
                     # 1件も見つからなかったとき
                     st.warning("該当する事例が見つかりませんでした")
             else:
-                # バックエンドがまだ完成していないとき
-                st.info("バックエンド接続後に検索できます")
+                st.warning("データが見つかりませんでした")
