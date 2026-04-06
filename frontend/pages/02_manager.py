@@ -7,14 +7,17 @@ today = date.today()
 target_date = today - timedelta(days=1)
 
 st.title("現場レポート")
-st.markdown(f"**📅 前日 {target_date.strftime('%Y年%m月%d日')} の日報**")
+
+st.markdown(f"**📅 前日 2026年4月5日 のデータ**")
+
 
 # ── session_stateの初期化 ──
 if "selected_post" not in st.session_state:
     st.session_state.selected_post = None
 
-# ── データ取得 ──
-priority_posts, other_posts = get_must_read_reports()
+# ── 4/5データ取得 ──
+priority_posts, other_posts = get_must_read_reports(date(2026, 4, 5))
+
 
 
 
