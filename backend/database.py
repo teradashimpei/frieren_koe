@@ -4,6 +4,7 @@ import psycopg
 from datetime import datetime, timezone, timedelta, date
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
+from backend.ai_analysis import analyze_report_with_openai
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -96,6 +97,7 @@ def register_report(data: dict) -> dict:
                     """
                         INSERT INTO public.reports (author_name, department, work_start, work_end, content, is_smooth, improvement, urgency, notes)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id
                     """,
                     (
                         cleaned_data["author_name"],
@@ -109,8 +111,10 @@ def register_report(data: dict) -> dict:
                         cleaned_data["notes"],
                     )
                 )
+                row = cur.fetchone()
+                print("fetchone:", row)
+                report_id = row["id"]
                 conn.commit()
-        return {"status": "success", "message": "登録が完了しました。"}
     except psycopg.OperationalError:
         return {"status": "error", "message": "データベース接続でエラーが発生しました。"}
     except psycopg.IntegrityError:
@@ -118,7 +122,17 @@ def register_report(data: dict) -> dict:
     except psycopg.DatabaseError:
         return {"status": "error", "message": "データベース処理でエラーが発生しました。"}
     except Exception as e:
-        return {"status": "error", "message": f"エラーが発生しました。"}
+        return {"status": "error", "message": f"エラーが発生しました。{e}"}
+    try:
+        analysis = analyze_report_with_openai(cleaned_data)
+        if analysis["should_save"]:
+            save_analysis(report_id, analysis)
+            return {"status": "success", "message": "日報の登録が完了しました。貴重な「声」ありがとうございます！"}
+        else:
+            return {"status": "success", "message": "日報の登録が完了しました。お疲れ様でした！"}
+    except Exception:
+        print("分析時にエラーが発生")
+        return {"status": "success", "message": "日報の登録が完了しました。"}
 
 # データベースから日報のデータをすべて取得する
 def get_all_reports() -> list:
@@ -234,3 +248,31 @@ def get_must_read_reports(target_date: date | None = None) -> list[dict]:
     ))
     return must_reports, other_reports
 
+def save_analysis(report_id: int, analysis: dict) -> None:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO public.analysis (report_id, case_summary, issue_type)
+                VALUES (%s, %s, %s)
+                """,
+                (
+                    report_id,
+                    analysis["case_summary"],
+                    analysis["issue_type"],
+                )
+            )
+        conn.commit()
+
+data = {
+    "author_name": "テストじろう",
+    "department": "テスト",
+    "work_start":datetime(2026, 4, 5, 8, 00),
+    "work_end":datetime(2026, 4, 5, 19, 00),
+    "content": "清掃が追いつかず、作業場の床に油汚れが残っていた。終業前に重点的に清掃した。",
+    "is_smooth": 1,
+    "improvement": "",
+    "urgency": "",
+    "notes": "朝の段取りで使う道具が毎回ばらつくため、置き場を固定すると準備時間を短くできそう。"
+}
+print(register_report(data))
