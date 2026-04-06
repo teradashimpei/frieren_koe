@@ -134,14 +134,30 @@ def register_report(data: dict) -> dict:
         print("分析時にエラーが発生")
         return {"status": "success", "message": "日報の登録が完了しました。"}
 
-# データベースから日報のデータをすべて取得する
-def get_all_reports() -> list:
+def get_all_reports() -> list[dict]:
+    """データベースから日報のデータをすべて取得する"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT * FROM public.reports ORDER BY created_at DESC"
             )
             return cur.fetchall()
+
+def get_all_analysis_reports() -> list[dict]:
+    """データベースから分析データをすべて取得する"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM public.analysis
+                JOIN public.reports
+                ON public.analysis.report_id = public.reports.id
+                ORDER BY public.analysis.created_at DESC
+                """
+            )
+            return cur.fetchall()
+
 
 def get_reports_by_date(target_date: date | None = None) -> list[dict]:
     """指定した日付（日本時間）のデータを取得する。未指定なら今日。"""
@@ -263,16 +279,3 @@ def save_analysis(report_id: int, analysis: dict) -> None:
                 )
             )
         conn.commit()
-
-data = {
-    "author_name": "テストじろう",
-    "department": "テスト",
-    "work_start":datetime(2026, 4, 5, 8, 00),
-    "work_end":datetime(2026, 4, 5, 19, 00),
-    "content": "清掃が追いつかず、作業場の床に油汚れが残っていた。終業前に重点的に清掃した。",
-    "is_smooth": 1,
-    "improvement": "",
-    "urgency": "",
-    "notes": "朝の段取りで使う道具が毎回ばらつくため、置き場を固定すると準備時間を短くできそう。"
-}
-print(register_report(data))
