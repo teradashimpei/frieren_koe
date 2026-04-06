@@ -1,6 +1,5 @@
 import streamlit as st
 import datetime
-from utils.api import save_post
 from backend.database import register_report
 
 st.markdown("<h1 style='text-align: center;'>今日もお疲れさまでした 👷</h1>", unsafe_allow_html=True)
@@ -26,9 +25,9 @@ with col2:
         # ① 作業時間
         st.subheader("⏰ 作業時間")
         start_date = st.date_input("作業開始日付")
-        start_time = st.time_input("作業開始時間", step=datetime.timedelta(minutes=15))
+        start_time = st.time_input("作業開始時間", datetime.time(8, 00), step=datetime.timedelta(minutes=15))
         end_date = st.date_input("作業終了日付")
-        end_time = st.time_input("作業終了時間", step=datetime.timedelta(minutes=15))        
+        end_time = st.time_input("作業終了時間", datetime.time(17, 00), step=datetime.timedelta(minutes=15))        
         work_start = datetime.datetime.combine(start_date, start_time)
         work_end = datetime.datetime.combine(end_date, end_time)
 
@@ -58,7 +57,8 @@ with col2:
         # 緊急度（改善点の子）
         urgency = st.radio("緊急度",
                            ["高", "中", "低"],
-                           horizontal=True)
+                           horizontal=True,
+                           index=None)
 
         st.divider()
 

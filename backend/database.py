@@ -1,7 +1,7 @@
 import os
 import re
 import psycopg
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
 
@@ -129,20 +129,39 @@ def get_all_reports() -> list:
             )
             return cur.fetchall()
 
-def get_today_reports() -> list[dict]:
-    """今日（日本時間 0:00以降）のデータだけをDBから高速に取得する"""
-    # 今日（日本時間）を作る
+def get_reports_by_date(target_date: date | None = None) -> list[dict]:
+    """指定した日付（日本時間）のデータを取得する。未指定なら今日。"""
     jst = timezone(timedelta(hours=9))
-    today_start = datetime.now(jst).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # データベースと時間を変換
-    today_start_utc = today_start.astimezone(timezone.utc)
+    # 引数がなければ今日
+    if target_date is None:
+        target_date = (datetime.now(jst) - timedelta(days=1)).date()
 
+    # 日本時間でその日の開始と翌日の開始を作る
+    day_start_jst = datetime(
+        target_date.year,
+        target_date.month,
+        target_date.day,
+        0, 0, 0,
+        tzinfo=jst
+    )
+    # 開始日付の翌日を取得する
+    day_end_jst = day_start_jst + timedelta(days=1)
+
+    # DBがUTC保存ならUTCに直す
+    day_start_utc = day_start_jst.astimezone(timezone.utc)
+    day_end_utc = day_end_jst.astimezone(timezone.utc)
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT * FROM public.reports WHERE created_at >= %s ORDER BY created_at DESC",
-                (today_start_utc,)
+                """
+                SELECT *
+                FROM public.reports
+                WHERE work_start >= %s
+                  AND work_start < %s
+                ORDER BY work_start DESC
+                """,
+                (day_start_utc, day_end_utc)
             )
             return cur.fetchall()
 
@@ -192,21 +211,26 @@ def get_reports_filter_department(department: str) -> list:
             )
             return cur.fetchall()
 
-def get_must_read_reports() -> list[dict]:
+def get_must_read_reports(target_date: date | None = None) -> list[dict]:
     """今日の日報から必読案件を抽出し、優先度順に並べて返す"""
-    rows = get_today_reports()
+    rows = get_reports_by_date(target_date)
     urgency_order = {"高": 0, "中": 1, "低": 2, None: 3}
 
-    result = []
+    must_reports = []
+    other_reports = []
     for row in rows:
         reasons = get_must_read_reasons(row)
         if reasons:
             # 元のデータに「必読理由」を合体させてコピー
-            result.append({**row, "must_read_reasons": reasons})
+            must_reports.append({**row, "must_read_reasons": reasons})
+        else:
+            other_reports.append(row)
+
 
     # 優先度順（順調度 低い順 ＞ 緊急度 高い順）に並べ替え
-    result.sort(key=lambda r: (
+    must_reports.sort(key=lambda r: (
         int(r.get("is_smooth") or 5),
         urgency_order.get(r.get("urgency"), 3)
     ))
-    return result
+    return must_reports, other_reports
+
