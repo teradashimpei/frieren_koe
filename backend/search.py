@@ -29,7 +29,7 @@ def search_fulltext(query: str, analysis_reports: list) -> list:
             r["preview"] = _make_preview(analysis_report.get("case_summary", analysis_report.get("issue_type", "")), query)
             results.append(r)
 
-    results.sort(key=lambda x: x["match_count"], reverse=True)
+    results.sort(key=lambda x: x["issue_type"], reverse=True)
     return results
 
 def _make_preview(text: str, query: str, ctx: int = 80) -> str:
