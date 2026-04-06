@@ -7,7 +7,9 @@ today = date.today()
 target_date = today - timedelta(days=1)
 
 st.title("現場レポート")
+
 st.markdown(f"**📅 前日 2026年4月5日 のデータ**")
+
 
 # ── session_stateの初期化 ──
 if "selected_post" not in st.session_state:
