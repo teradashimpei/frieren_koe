@@ -1,5 +1,7 @@
 import streamlit as st
-from utils.api import get_summary, get_posts
+from datetime import date
+from backend.database import get_must_read_reports
+
 
 st.title("今日の現場レポート")
 
@@ -7,87 +9,10 @@ st.title("今日の現場レポート")
 if "selected_post" not in st.session_state:
     st.session_state.selected_post = None
 
-# ── ダミーデータ ──
-all_posts = [
-    {
-        "id": 1,
-        "author_name": "山田太郎",
-        "department": "製造部",
-        "content": "ラインCで異音が発生しました。原因は不明です。",
-        "is_smooth": 1,
-        "improvement": "設備点検が必要だと思います。",
-        "urgency": "高",
-        "notes": "早急に対応が必要だと感じました。",
-        "work_start": "08:00",
-        "work_end": "21:00",
-    },
-    {
-        "id": 2,
-        "author_name": "田中花子",
-        "department": "営業部",
-        "content": "クレーム対応に時間がかかりました。",
-        "is_smooth": 2,
-        "improvement": "対応マニュアルの見直しが必要です。",
-        "urgency": "中",
-        "notes": "",
-        "work_start": "08:00",
-        "work_end": "20:00",
-    },
-    {
-        "id": 3,
-        "author_name": "佐藤次郎",
-        "department": "総務部",
-        "content": "通常業務をこなしました。特に問題はありません。",
-        "is_smooth": 4,
-        "improvement": "",
-        "urgency": "低",
-        "notes": "",
-        "work_start": "09:00",
-        "work_end": "18:00",
-    },
-    {
-        "id": 4,
-        "author_name": "鈴木美咲",
-        "department": "人事部",
-        "content": "採用面接を3件実施しました。順調に進んでいます。",
-        "is_smooth": 5,
-        "improvement": "",
-        "urgency": "低",
-        "notes": "面接の雰囲気が良かったです。",
-        "work_start": "09:00",
-        "work_end": "17:30",
-    },
-    {
-        "id": 5,
-        "author_name": "伊藤健太",
-        "department": "経理部",
-        "content": "月次決算の資料作成を行いました。",
-        "is_smooth": 3,
-        "improvement": "",
-        "urgency": "低",
-        "notes": "",
-        "work_start": "09:00",
-        "work_end": "18:30",
-    },
-]
+# ── データ取得 ──
+priority_posts, other_posts = get_must_read_reports(date(2026, 4, 5))
 
-# ── 必読案件の判定 ──
-def is_priority(post):
-    try:
-        start = int(post["work_start"].split(":")[0])
-        end   = int(post["work_end"].split(":")[0])
-        hours = end - start
-    except:
-        hours = 0
-    return (
-        post["is_smooth"] <= 2 or
-        post["improvement"] != "" or
-        post["urgency"] == "高" or
-        hours >= 11
-    )
 
-priority_posts = [p for p in all_posts if is_priority(p)]
-other_posts    = [p for p in all_posts if not is_priority(p)]
 
 # ── 案件カード表示関数（expander版）──
 def show_card(post, color):
