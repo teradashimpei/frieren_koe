@@ -7,7 +7,7 @@ today = date.today()
 target_date = today - timedelta(days=1)
 
 st.title("現場レポート")
-st.markdown(f"**📅 {target_date.strftime('%Y年%m月%d日')} のデータ**")
+st.markdown(f"**📅 前日 {target_date.strftime('%Y年%m月%d日')} の日報**")
 
 # ── session_stateの初期化 ──
 if "selected_post" not in st.session_state:
