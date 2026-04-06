@@ -23,7 +23,15 @@ class ReportAnalysis(BaseModel):
 
 load_dotenv()
 # st.secretsにキーがあればそれを使い、なければos.getenv(.env)を使う
-api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+if "OPENAI_API_KEY" in st.secrets:
+    api_key = st.secrets["OPENAI_API_KEY"]
+else:
+    api_key = os.getenv("OPENAI_API_KEY")
+
+if not api_key:
+    st.error("【エラー】OpenAIのAPIキーが読み込めません。Streamlit CloudのSecrets設定を確認してください。")
+    st.stop()
+
 client = OpenAI(api_key=api_key)
 
 
@@ -49,9 +57,9 @@ def build_analysis_input(data: dict) -> str:
 def analyze_report_with_openai(data: dict) -> dict:
     analysis_input = build_analysis_input(data)
 
-    response = client.responses.parse(
+    response = client.beta.chat.completions.parse(
         model="gpt-4o-mini",
-        input=[
+        massage=[
             {
                 "role": "system",
                 "content": """
@@ -111,10 +119,10 @@ def analyze_report_with_openai(data: dict) -> dict:
                 "content": analysis_input,
             },
         ],
-        text_format=ReportAnalysis,
+        response_format=ReportAnalysis,
     )
 
-    parsed = response.output_parsed
+    parsed = response.choices[0].message.parsed
 
     return {
         "case_summary": parsed.case_summary,
