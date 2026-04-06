@@ -1,5 +1,6 @@
 import streamlit as st
 import datetime
+import time
 from backend.database import register_report
 
 st.markdown("<h1 style='text-align: center;'>今日もお疲れさまでした 👷</h1>", unsafe_allow_html=True)
@@ -36,7 +37,7 @@ with col2:
         # 業務内容
         st.markdown("### 📝 業務内容　<span style='color:red; font-size:14px;'>※必須</span>", unsafe_allow_html=True)
         content = st.text_area("本日の業務内容をお話しください",
-                                placeholder="例：午前はラインAで部品の組み立て作業、午後は検査工程に入った。新しい部品の取り付けを初めてやった")
+                                placeholder="例：午前はラインAで部品の組み立て作業、午後は検査工程に入った。新しい部品の取り付けを初めてやった", height=200)
         # ② 順調ですか？（必須）
         st.markdown("### 📊 作業は順調ですか？　<span style='color:red; font-size:14px;'>※必須</span>", unsafe_allow_html=True)
         col_left, col_radio, col_right = st.columns([0.5, 8, 0.5])
@@ -52,7 +53,7 @@ with col2:
         # ③ 改善点（任意）
         st.markdown("### 💡 改善点　<span style='color:gray; font-size:14px;'>※任意</span>", unsafe_allow_html=True)
         memo = st.text_area("改善点があればお話しください",
-                    placeholder="例：工程の順番を変えたら時間が短縮できそう／この工具が古くて使いにくい／〇〇さんが体調悪そうだった")
+                    placeholder="例：工程の順番を変えたら時間が短縮できそう／この工具が古くて使いにくい／〇〇さんが体調悪そうだった", height=200)
 
         # 緊急度（改善点の子）
         urgency = st.radio("緊急度",
@@ -65,7 +66,7 @@ with col2:
         # ③ 気付いたこと（任意）
         st.markdown("### 💬 気付いたこと　<span style='color:gray; font-size:14px;'>※任意</span>", unsafe_allow_html=True)
         notice = st.text_area("業務以外のことでも、気になったことをお話しください",
-                      placeholder="例：今日の材料がいつもより硬い気がする／ベテランの〇〇さんのやり方が参考になった／人手が足りなくて焦った／更衣室の鍵が壊れかけている")
+                      placeholder="例：今日の材料がいつもより硬い気がする／ベテランの〇〇さんのやり方が参考になった／人手が足りなくて焦った／更衣室の鍵が壊れかけている", height=200)
         data = {
             "author_name": author_name,
             "department": department,
@@ -86,5 +87,10 @@ with col2:
         result = register_report(data)
         if result["status"] == "success":
             st.success(result["message"])
+            st.session_state.submitted = True
         else:
             st.error(result["message"])
+
+    if st.session_state.submitted:
+        if st.button("トップへ戻る"):
+            st.switch_page("app_top.py")
