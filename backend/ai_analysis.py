@@ -1,4 +1,5 @@
 import os
+import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 from typing import Literal
@@ -21,7 +22,10 @@ class ReportAnalysis(BaseModel):
     should_save: bool
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# st.secretsにキーがあればそれを使い、なければos.getenv(.env)を使う
+api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=api_key)
+
 
 def build_analysis_input(data: dict) -> str:
     return f"""
