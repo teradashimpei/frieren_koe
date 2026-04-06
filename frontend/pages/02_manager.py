@@ -1,16 +1,20 @@
 import streamlit as st
-from datetime import date
+from datetime import date, timedelta
 from backend.database import get_must_read_reports
 
+# 前日の日付を計算して表示用に使う
+today = date.today()
+target_date = today - timedelta(days=1)
 
-st.title("今日の現場レポート")
+st.title("現場レポート")
+st.markdown(f"**📅 {target_date.strftime('%Y年%m月%d日')} のデータ**")
 
 # ── session_stateの初期化 ──
 if "selected_post" not in st.session_state:
     st.session_state.selected_post = None
 
 # ── データ取得 ──
-priority_posts, other_posts = get_must_read_reports(date(2026, 4, 5))
+priority_posts, other_posts = get_must_read_reports()
 
 
 
@@ -41,7 +45,7 @@ def show_card(post, color):
             background: white;">
             <div style="font-size:14px;font-weight:500;
                         margin-bottom:8px;">
-                {post['author_name']}
+                {post['department']}  {post['author_name']}
             </div>
             <div style="font-size:13px;color:#666;
                         line-height:1.6;">
@@ -55,7 +59,9 @@ def show_card(post, color):
     with st.expander("詳細を見る"):
         st.write(f"部署名：{post['department']}")
         st.write(f"名前：{post['author_name']}")
-        st.write(f"勤務時間：{post['work_start']} 〜 {post['work_end']}")
+        work_start = str(post['work_start'])[:16].replace('T', ' ')
+        work_end   = str(post['work_end'])[:16].replace('T', ' ')
+        st.write(f"勤務時間：{work_start} 〜 {work_end}")
         st.divider()
 
         st.markdown("**作業内容**")
